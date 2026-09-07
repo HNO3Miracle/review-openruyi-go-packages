@@ -9,20 +9,20 @@
 下面仅演示排版，不要因此新增 patch 或测试参数：
 
 ```spec
-BuildArch:      noarch
-BuildSystem:    golangmodules
+BuildArch:           noarch
+BuildSystem:         golangmodules
 
 # Explain the patch purpose or give its upstream PR URL.
-Patch2000:      2000-example.patch
+Patch2000:           2000-example.patch
 
 BuildOption(check):  -short
 
-BuildRequires:  go
-BuildRequires:  go-rpm-macros
+BuildRequires:       go
+BuildRequires:       go-rpm-macros
 
-Provides:       go(%{go_import_path}) = %{version}
+Provides:            go(%{go_import_path}) = %{version}
 
-Requires:       go(example.org/dependency)
+Requires:            go(example.org/dependency)
 ```
 
 | 检查点 | 常见 review 意见与要求 |
@@ -30,7 +30,7 @@ Requires:       go(example.org/dependency)
 | BuildArch | 最后一个 Source 之后、BuildSystem 之前，不能放依赖块里 |
 | Patch | BuildSystem 后、BuildOption 前；没有 BuildOption 就在 BuildRequires 前，不能直接紧跟 Source 放到 BuildSystem 上方 |
 | BuildOption | 按阶段排列，与 patch、依赖块用空行分开 |
-| 对齐 | 普通常见字段值在第 17 列，但是不绝对，优先保证整体对齐；不用 Tab；长字段按当前 formatter |
+| 对齐 | 整份 SPEC 的声明值共享一个起始列，按最长声明前缀确定；不用 Tab，具体算法见下节 |
 | Source | HTTP(S) 来源前紧贴有效 `#!RemoteAsset:  sha256:...`；每条分别检查；Git/CreateArchive 按专门格式 |
 | 宏位置 | 基本宏和 commit 在前，测试宏紧随其后；注释贴近作用对象；不用一次性 go_source_subdir 宏 |
 | 版本引用 | 检查 Source/prep 内写死的重复版本；归一化版本不等于上游 tag 时，先判断再用宏 |
@@ -38,6 +38,48 @@ Requires:       go(example.org/dependency)
 | Release/changelog | 使用 `%autorelease` 和 `%autochangelog` |
 | 空白 | 段落间空行，清理尾随空白，文件末尾换行，避免无关排版变动 |
 | SPDX | 保留既有版权署名；普通小改不新增用户 FileContributor |
+
+## 整份文件对齐
+
+这是本用户要求的审查约定，不把它表述成官方文档规定的固定列宽。每份 SPEC 单独选择一个声明值起始列，空行、注释、条件分支及子包边界不重置列宽。普通字段、宏和 BuildOption 不能各自使用不同的值列。
+
+纳入普通标签、Source/Patch、BuildOption、依赖字段、`#!RemoteAsset:` 和声明型 `%define`/`%global`。普通标签的前缀截至冒号；宏的前缀截至宏名称（含参数声明，如有），宏指令和名称之间保留一个空格。宏体、字段值的长度不参与计算；不能用匹配任意冒号的正则把 URL、注释或 shell 命令误当声明。
+
+列号从 1 开始，使用空格，按原文件文本计算显示宽度，不展开 RPM 宏：
+
+```text
+P_i = 第 i 个声明的前缀
+W   = 所有 P_i 的最大显示宽度
+C   = W + 3
+S_i = C - width(P_i) - 1
+输出 = P_i + S_i 个空格 + 原值
+```
+
+最长前缀后至少两个空格，所有声明值均从 C 列开始。已有文件若所有声明已经统一在更宽且合规的列，可保留该列。新增长字段导致原列容不下时，整份文件一起右移；不能仅给长字段留一个空格作为例外。以下完整声明片段由宏前缀决定列宽：
+
+```spec
+%define _name           example
+%define go_import_path  github.com/example/example
+
+Name:                   go-github-example-example
+Version:                1.0.0
+Release:                %autorelease
+BuildArch:              noarch
+BuildSystem:            golangmodules
+
+BuildOption(check):     -vet=off
+
+BuildRequires:          go
+BuildRequires:          go-rpm-macros
+
+Provides:               go(%{go_import_path}) = %{version}
+```
+
+语法边界：description 正文按自然段排版；构建阶段的 shell 命令按控制结构缩进；files、patchlist 条目保留各自格式；多行宏只对齐声明首行，宏体列表保留层级缩进；SPDX 和普通说明注释不参与。不能改动 shell here-document、续行、字符串或宏体中的空白来凑声明列，也不能改名称、值、Patch 编号或依赖顺序来实现对齐。
+
+验收只针对本次目标文件：报告目标列、偏离行号和实际列；确认目标文件集合非空；比较修改前后的声明前缀和值，确保仅声明分隔空白改变，其他内容保持不变。再运行相关格式 hook 并检查最终 diff。当前仓库 format-spacing 对 BuildRequires/BuildOption 检查的是冒号后至少两个空格，不是只能两个；执行时仍核对目标 revision 的 hook。纯对齐不下载源码、不触发 OBS，缓存检查结果时记录对齐规则版本；本节规则版本为 2。
+
+AI 常错点：hook 通过不代表整体对齐；不能只修 review 指向的一行；新增长字段后必须重新计算全文件列宽；不能把未匹配到任何文件的检查当作通过。
 
 ## Patch 编号与格式
 

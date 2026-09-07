@@ -29,9 +29,8 @@ Requires:       go(example.org/dependency)
 |---|---|
 | BuildArch | 最后一个 Source 之后、BuildSystem 之前，不能放依赖块里 |
 | Patch | BuildSystem 后、BuildOption 前；没有 BuildOption 就在 BuildRequires 前，不能直接紧跟 Source 放到 BuildSystem 上方 |
-| BuildOption | 冒号后两个空格；按阶段排列，与 patch、依赖块用空行分开 |
-| 对齐 | 普通常见字段值在第 17 列；BuildRequires 冒号后两个空格，Requires/Provides 后七个；不用 Tab；长字段按当前 formatter |
-| 依赖 | 一行一个，禁止 `BuildRequires: go` 这种单空格；不要为无意义重排制造整包 diff |
+| BuildOption | 按阶段排列，与 patch、依赖块用空行分开 |
+| 对齐 | 普通常见字段值在第 17 列，但是不绝对，优先保证整体对齐；不用 Tab；长字段按当前 formatter |
 | Source | HTTP(S) 来源前紧贴有效 `#!RemoteAsset:  sha256:...`；每条分别检查；Git/CreateArchive 按专门格式 |
 | 宏位置 | 基本宏和 commit 在前，测试宏紧随其后；注释贴近作用对象；不用一次性 go_source_subdir 宏 |
 | 版本引用 | 检查 Source/prep 内写死的重复版本；归一化版本不等于上游 tag 时，先判断再用宏 |
@@ -45,7 +44,7 @@ Requires:       go(example.org/dependency)
 - 文件前四位表示类型：0001–0999 同版本 upstream；1000–1999 CVE/跨版本 backport；2000–2999 下游或未被 upstream 接受的修改。PR 已提交不等于已接受；合并后不只因状态变化重命名旧补丁。
 - 本用户曾要求 `Patch1: 0001-...`、`Patch2000: 2000-...`。按当前任务约定核对索引、文件名、应用顺序，尤其第二个 patch 和重命名后的旧引用。RPM 允许 `Patch0: 0001-...`，官方示例也可能如此，不得虚称语法错误。
 - 超过三个 patch 使用 `%patchlist`，放 description 上方，核对隐式顺序与逐项注释。
-- 每项上方写目的或直接链接：`# https://github.com/owner/repo/pull/123`。不用额外 `Upstream:` 前缀，不给普通注释加 `- HNO3Miracle`。
+- 每项上方写目的或直接链接：`# https://github.com/owner/repo/pull/123`。不用额外 `Upstream:` 前缀，在SPDX署名一致的时候，不给普通注释加署名。
 - 本地补丁用 git format-patch 生成；检查邮件头、真实作者、subject、说明、路径和 diff，不靠手工补 From 头冒充生成过程。
 - 编号/文件名改变但 diff 不变时，仅查引用、顺序和内容一致性。重新生成改变了 hunk 时再升级语义检查。
 - 保留上游真实作者，不伪造来源链接。说明补丁作用、API 影响，不能把 before/after 标反。
@@ -67,3 +66,4 @@ Requires:       go(example.org/dependency)
 - 只跑变化文件的相关 hook，不使用全仓 `--all-files`。纯 review 防止修改型 hook 污染工作树；修复后检查 hook 是否擅自加署名或无关内容。
 - 已授权整理提交时，一包一提交、Signed-off-by、无 fixup/squash。修改 metadata 用 `SPECS: 包名: 修改说明.`，不是 Add。改写历史先核对远端 head，再用明确 lease 推送。
 - PR description 遵守目标模板，用户说不改就不改；格式检查不自动发布评论或 upstream PR。
+- 回复 comment 产生任何公众能看得到的交流前，需经过用户同意。

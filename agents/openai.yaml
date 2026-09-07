@@ -1,4 +1,4 @@
 interface:
   display_name: "openRuyi Go 包逐包审查"
-  short_description: "逐包检查 openRuyi Go SPEC、补丁、依赖与构建验证"
-  default_prompt: "Use $review-openruyi-go-packages to review each changed openRuyi Go package and report or fix every packaging issue."
+  short_description: "严格逐包审查 SPEC 格式与常见 review 意见，按需验证功能并复用结果"
+  default_prompt: "使用 $review-openruyi-go-packages 逐包检查当前变更，优先严格检查格式，仅在变更影响功能时展开语义审查和测试。"
